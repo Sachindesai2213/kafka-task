@@ -5,6 +5,8 @@ from fastapi import Body, FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from producer import producer
+from consumer import save_to_database
+import time
 
 app = FastAPI()
 
@@ -13,7 +15,7 @@ templates = Jinja2Templates(directory='templates')
 
 connection = mysql.connector.connect(
     user='root',
-    password='',
+    password='Root@123',
     host='localhost',
     database='kafka_task'
 )
@@ -37,12 +39,15 @@ messages_list = [
 
 @app.post('/api/messages')
 def save_messages(messages=Body()):
+    timer = time.time()
     for message in messages:
-        producer.send(
-            'quickstart-events',
-            value=message['message'].encode('utf-8'),
-            headers=[('key', str(message['id']).encode('utf-8'))]
-        )
+        save_to_database(message, f'type{str(message["id"])}', message['message'])
+        # producer.send(
+        #     'quickstart-events',
+        #     value=message['message'].encode('utf-8'),
+        #     headers=[('key', str(message['id']).encode('utf-8'))]
+        # )
+    print(time.time() - timer)
     return 'Saved Successfully'
 
 

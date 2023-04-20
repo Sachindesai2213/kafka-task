@@ -2,6 +2,7 @@ from apscheduler.schedulers.background import BlockingScheduler
 import random
 import requests
 import json
+import time
 
 messages_list = [
     {'id': 1, 'message': 'Defective Product'},
@@ -14,12 +15,19 @@ messages_list = [
     {'id': 8, 'message': 'Rude delivery person'},
 ]
 
+counter = 0
+timer = time.time()
 
 def random_messages():
-    messages = random.choices(messages_list, k=random.randint(1, 101))
+    global counter
+    global timer
+    messages_counter = random.randint(1, 101)
+    messages = random.choices(messages_list, k=100)
     response = requests.post('http://127.0.0.1:8000/api/messages',
                              json.dumps(messages))
-    print(response)
+    counter += messages_counter
+    timer += time.time() - timer
+    print(counter, response, timer)
 
 
 sched = BlockingScheduler()
