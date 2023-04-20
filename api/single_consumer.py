@@ -3,7 +3,7 @@ from datetime import datetime
 
 import mysql.connector
 from kafka import KafkaConsumer
-from multiprocessing import Process, Pool
+# from multiprocessing import Process
 import pytz
 
 # set timezone to IST
@@ -11,16 +11,17 @@ timezone = pytz.timezone('Asia/Kolkata')
 
 connection = mysql.connector.connect(
     user='root',
-    password='Root@123',
+    password='',
     host='localhost',
     database='kafka_task'
 )
 cursor = connection.cursor()
 
+
 def save_to_database(message, type, data):
     print(message, type, data)
-    # timestamp = datetime.fromtimestamp(message.timestamp / 1000.0, timezone)
-    timestamp = datetime.now()
+    timestamp = datetime.fromtimestamp(message.timestamp / 1000.0, timezone)
+    # timestamp = datetime.now()
     if type == 'type1':
         query = "INSERT INTO defective_products \
             (`type`, `user_id`, `timestamp`, `inserted_on`) \
@@ -99,7 +100,10 @@ if __name__ == '__main__':
         data = message.value.decode('utf-8')
         headers = message.headers
         type = headers[0][1].decode('utf-8')
-        # save_to_database(message, f'type{type}', data)
-        process = Process(target=save_to_database, args=(message, f'type{type}', data,))
-        process.start()
+        save_to_database(message, f'type{type}', data)
+        # process = Process(
+        #     target=save_to_database,
+        #     args=(message, f'type{type}', data,)
+        # )
+        # process.start()
         # process.join()

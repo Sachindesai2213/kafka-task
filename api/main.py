@@ -5,7 +5,7 @@ from fastapi import Body, FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from producer import producer
-from consumer import save_to_database
+# from consumer import save_to_database
 import time
 
 app = FastAPI()
@@ -15,7 +15,7 @@ templates = Jinja2Templates(directory='templates')
 
 connection = mysql.connector.connect(
     user='root',
-    password='Root@123',
+    password='',
     host='localhost',
     database='kafka_task'
 )
@@ -41,12 +41,21 @@ messages_list = [
 def save_messages(messages=Body()):
     timer = time.time()
     for message in messages:
-        save_to_database(message, f'type{str(message["id"])}', message['message'])
+        # save_to_database(message, f'type{str(message["id"])}',
+        #                  message['message'])
         # producer.send(
         #     'quickstart-events',
         #     value=message['message'].encode('utf-8'),
         #     headers=[('key', str(message['id']).encode('utf-8'))]
         # )
+        topic = f'type{str(message["id"])}'
+        producer.send(
+            topic,
+            value=message['message'].encode('utf-8'),
+            headers=[('key', str(message['id']).encode('utf-8'))]
+        )
+        ''' Time taken for a producer to send messages to diff topics
+        consumes more time than sending messages to same topic '''
     print(time.time() - timer)
     return 'Saved Successfully'
 
@@ -63,7 +72,7 @@ def get_messages(request: Request):
         }
         for message_type in messages_list:
             query = "SELECT * FROM " + message_type['table'] + \
-                " WHERE inserted_on BETWEEN %s AND %s"
+                " WHERE timestamp BETWEEN %s AND %s"
             cursor.execute(
                 query,
                 (temp['start'], temp['end'])
