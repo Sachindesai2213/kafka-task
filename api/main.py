@@ -5,7 +5,7 @@ from fastapi import Body, FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from producer import producer
-# from consumer import save_to_database
+from single_consumer import save_to_database
 import time
 
 app = FastAPI()
@@ -15,7 +15,7 @@ templates = Jinja2Templates(directory='templates')
 
 connection = mysql.connector.connect(
     user='root',
-    password='',
+    password='Root@123',
     host='localhost',
     database='kafka_task'
 )
@@ -43,17 +43,17 @@ def save_messages(messages=Body()):
     for message in messages:
         # save_to_database(message, f'type{str(message["id"])}',
         #                  message['message'])
-        # producer.send(
-        #     'quickstart-events',
-        #     value=message['message'].encode('utf-8'),
-        #     headers=[('key', str(message['id']).encode('utf-8'))]
-        # )
-        topic = f'type{str(message["id"])}'
         producer.send(
-            topic,
+            'quickstart-events',
             value=message['message'].encode('utf-8'),
             headers=[('key', str(message['id']).encode('utf-8'))]
         )
+        # topic = f'type{str(message["id"])}'
+        # producer.send(
+        #     topic,
+        #     value=message['message'].encode('utf-8'),
+        #     headers=[('key', str(message['id']).encode('utf-8'))]
+        # )
         ''' Time taken for a producer to send messages to diff topics
         consumes more time than sending messages to same topic '''
     print(time.time() - timer)
@@ -61,7 +61,7 @@ def save_messages(messages=Body()):
 
 
 @app.get('/messages', response_class=HTMLResponse)
-def get_messages(request: Request):
+def get_messages_template(request: Request):
     data = []
     start_time = datetime(2023, 4, 19, 23, 40, 0)
     end_time = start_time + timedelta(minutes=10)
@@ -86,3 +86,28 @@ def get_messages(request: Request):
         'data': data
     }
     return templates.TemplateResponse('messages.html', context)
+
+
+
+@app.get('/api/messages')
+def get_messages(start_date: str, end_date: str):
+    data = []
+    start_time = datetime.strptime(start_date, '%Y-%m-%d %H:%M')
+    end_time = datetime.strptime(end_date, '%Y-%m-%d %H:%M')
+    print(start_time, end_time)
+    while start_time < end_time:
+        temp = {
+            'start': str(start_time),
+            'end': str(start_time + timedelta(minutes=1))
+        }
+        for message_type in messages_list:
+            query = "SELECT * FROM " + message_type['table'] + \
+                " WHERE timestamp BETWEEN %s AND %s"
+            cursor.execute(
+                query,
+                (temp['start'], temp['end'])
+            )
+            temp[message_type['table']] = len(cursor.fetchall())
+        data.append(temp)
+        start_time += timedelta(minutes=1)
+    return data

@@ -3,7 +3,7 @@ from datetime import datetime
 
 import mysql.connector
 from kafka import KafkaConsumer
-# from multiprocessing import Process
+from multiprocessing import Process
 import pytz
 
 # set timezone to IST
@@ -11,7 +11,7 @@ timezone = pytz.timezone('Asia/Kolkata')
 
 connection = mysql.connector.connect(
     user='root',
-    password='',
+    password='Root@123',
     host='localhost',
     database='kafka_task'
 )
